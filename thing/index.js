@@ -87,7 +87,7 @@ function isThingShadowTopic(topicTokens, direction) {
 
 //begin module
 
-function ThingShadowsClient(deviceOptions, thingShadowOptions) {
+function ThingShadowsClient(deviceOptions, thingShadowOptions, deviceObj=null) {
    //
    // Force instantiation using the 'new' operator; this will cause inherited
    // constructors (e.g. the 'events' class) to be called.
@@ -130,10 +130,16 @@ function ThingShadowsClient(deviceOptions, thingShadowOptions) {
    //
    var shadowName;
 
-   //
-   // Instantiate the device.
-   //
-   var device = deviceModule.DeviceClient(deviceOptions);
+   var device;
+   if (deviceObj === undefined || deviceObj === null) {
+      //
+      // Instantiate the device.
+      //
+      device = deviceModule.DeviceClient(deviceOptions);
+   } else {
+      device = deviceObj;
+   }
+   
 
    if (!isUndefined(thingShadowOptions)) {
       if (!isUndefined(thingShadowOptions.operationTimeout)) {
@@ -235,7 +241,7 @@ function ThingShadowsClient(deviceOptions, thingShadowOptions) {
       // Remove the properties 'clientToken' and 'version' from the stateObject;
       // these properties are internal to this class.
       //
-      delete stateObject.clientToken;
+      // delete stateObject.clientToken;
       //Expose shadow version from raw object
       //delete stateObject.version;
       //
