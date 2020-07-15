@@ -26,11 +26,18 @@ var isUndefined = require('../common/lib/is-undefined');
 //
 // private functions
 //
-function buildThingShadowTopic(thingName, operation, type) {
+function buildThingShadowTopic(thingName, operation, type, shadowName) {
+   var head = '$aws/things/' + thingName + '/shadow/';
+   var tail = operation;
    if (!isUndefined(type)) {
-      return '$aws/things/' + thingName + '/shadow/' + operation + '/' + type;
+      // $aws/things/${thingName}/shadow/${operation}/${type}
+      tail = tail + '/' + type;
    }
-   return '$aws/things/' + thingName + '/shadow/' + operation;
+   if (!isUndefined(shadowName)) {
+      // $aws/things/${thingName}/shadow/name/${shadowName}/${operation}/${type}
+      tail = 'name/' + shadowName + '/' + tail;
+   }
+   return head + tail;
 }
 
 function isReservedTopic(topic) {
@@ -118,6 +125,12 @@ function ThingShadowsClient(deviceOptions, thingShadowOptions) {
    var connected = true;
 
    //
+   // Variable used to connect to named-shadows. If `undefined`, connect to the
+   // thing's base shadow topics.
+   //
+   var shadowName;
+
+   //
    // Instantiate the device.
    //
    var device = deviceModule.DeviceClient(deviceOptions);
@@ -125,6 +138,10 @@ function ThingShadowsClient(deviceOptions, thingShadowOptions) {
    if (!isUndefined(thingShadowOptions)) {
       if (!isUndefined(thingShadowOptions.operationTimeout)) {
          operationTimeout = thingShadowOptions.operationTimeout;
+      }
+
+      if (!isUndefined(thingShadowOptions.shadowName)) {
+         shadowName = thingShadowOptions.shadowName;
       }
    }
 
@@ -142,7 +159,8 @@ function ThingShadowsClient(deviceOptions, thingShadowOptions) {
             for (var k = 0, statLen = topicSpecs[i].statii.length; k < statLen; k++) {
                topics.push(buildThingShadowTopic(thingName,
                   topicSpecs[i].operations[j],
-                  topicSpecs[i].statii[k]));
+                  topicSpecs[i].statii[k],
+                  shadowName));
             }
          }
       }
@@ -420,7 +438,7 @@ function ThingShadowsClient(deviceOptions, thingShadowOptions) {
             thingShadows[thingName].clientToken = clientToken;
 
             var publishTopic = buildThingShadowTopic(thingName,
-               operation);
+               operation, undefined, shadowName);
             //
             // Subscribe to the 'accepted' and 'rejected' sub-topics for this get
             // operation and set a timeout beyond which they will be unsubscribed if 
